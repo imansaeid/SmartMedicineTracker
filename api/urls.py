@@ -22,9 +22,11 @@ urlpatterns = [
 
     # ── Firebase ──────────────────────────
     path('device-token/', views.save_device_token, name='save_device_token'),
-
+    
+    # ── New APIs ──────────────────────────
     path('medicines/<int:medicine_id>/update/', views.update_medicine),
     path('doses/mark/', views.mark_dose),
     path('doses/history/', views.dose_history),
     path('profile/update/', views.update_profile),
+    path('send-reminder/', views.send_reminder),
 ]

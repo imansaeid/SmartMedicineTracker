@@ -370,3 +370,34 @@ def update_profile(request):
             )
 
     return Response({'message': 'Profile updated successfully'})
+
+
+# ─── 15. إرسال إشعار تذكير ──────────────────────────
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def send_reminder(request):
+    from .firebase import send_notification
+
+    custom_user_id = int(request.user.username.split('_')[1])
+
+    # Get user's device token
+    try:
+        device = DeviceToken.objects.get(user_id=custom_user_id)
+    except DeviceToken.DoesNotExist:
+        return Response({'error': 'No device token found'},
+                        status=status.HTTP_404_NOT_FOUND)
+
+    medicine_name = request.data.get('medicine_name', 'your medicine')
+    time = request.data.get('time', '')
+
+    success = send_notification(
+        device_token=device.token,
+        title="💊 Medicine Reminder",
+        body=f"Time to take {medicine_name}! {time}"
+    )
+
+    if success:
+        return Response({'message': 'Notification sent successfully'})
+    else:
+        return Response({'error': 'Failed to send notification'},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
