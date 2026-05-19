@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <project version="4">
   <component name="ExternalStorageConfigurationManager" enabled="true" />
   <component name="ProjectRootManager" version="2" languageLevel="JDK_21" default="true" project-jdk-name="jbr-21" project-jdk-type="JavaSDK">
@@ -6,4 +7,12 @@
   <component name="ProjectType">
     <option name="id" value="Android" />
   </component>
+=======
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Black">
+    <option name="sdkName" value="Python 3.14 (medicine_tracker)" />
+  </component>
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.14 (medicine_tracker)" project-jdk-type="Python SDK" />
+>>>>>>> c3df22f70433dfaca7a7abad4b6b14a8f90ac18e
 </project>
