@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Palette — Pastel Violet -->
+    <color name="primary">#6366F1</color>
+    <color name="primary_dark">#4F46E5</color>
+    <color name="primary_light">#A5B4FC</color>
+    <color name="primary_surface">#EEF2FF</color>
+    <color name="primary_container">#C7D2FE</color>
+
+    <!-- Gradient End -->
+    <color name="secondary">#8B5CF6</color>
+    <color name="secondary_light">#DDD6FE</color>
+
+    <!-- Backgrounds -->
+    <color name="bg_main">#F5F7FF</color>
+    <color name="bg_card">#FFFFFF</color>
+    <color name="bg_surface">#EEF2FF</color>
+
+    <!-- Text -->
+    <color name="text_primary">#1E1B4B</color>
+    <color name="text_secondary">#4B5563</color>
+    <color name="text_hint">#9CA3AF</color>
+    <color name="text_on_primary">#FFFFFF</color>
+
+    <!-- Risk Colors — Pastel -->
+    <color name="safe_bg">#DCFCE7</color>
+    <color name="safe_text">#16A34A</color>
+    <color name="safe_border">#BBF7D0</color>
+
+    <color name="low_bg">#FEF9C3</color>
+    <color name="low_text">#B45309</color>
+    <color name="low_border">#FDE047</color>
+
+    <color name="medium_bg">#FFEDD5</color>
+    <color name="medium_text">#C2410C</color>
+    <color name="medium_border">#FED7AA</color>
+
+    <color name="high_bg">#FEE2E2</color>
+    <color name="high_text">#DC2626</color>
+    <color name="high_border">#FCA5A5</color>
+
+    <!-- UI Elements -->
+    <color name="divider">#E5E7EB</color>
+    <color name="border_light">#E0E7FF</color>
+    <color name="shadow_color">#6366F1</color>
+    <color name="white">#FFFFFF</color>
+    <color name="transparent">#00000000</color>
+
+    <!-- Bottom Nav -->
+    <color name="nav_active">#6366F1</color>
+    <color name="nav_inactive">#9CA3AF</color>
+</resources>

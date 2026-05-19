@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "851590436899",
+    "project_id": "smartmedicinetracker",
+    "storage_bucket": "smartmedicinetracker.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:851590436899:android:bd22d7a24a43a58cd6f996",
+        "android_client_info": {
+          "package_name": "com.medicineapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCiKiAejUkKHAOHCv3pkqNWQ5dOdjpmews"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

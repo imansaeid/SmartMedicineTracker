@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MediTrack</string>
+    <string name="app_tagline">Safe · Smart · On Time</string>
+
+    <!-- Auth -->
+    <string name="welcome_back">Welcome back 👋</string>
+    <string name="sign_in_subtitle">Sign in to manage your medicines</string>
+    <string name="email_hint">your@email.com</string>
+    <string name="password_hint">Enter your password</string>
+    <string name="forgot_password">Forgot password?</string>
+    <string name="btn_login">Sign In</string>
+    <string name="no_account">Don\'t have an account? </string>
+    <string name="sign_up">Sign Up</string>
+    <string name="create_account">Create Account 🌟</string>
+    <string name="full_name_hint">Your full name</string>
+    <string name="confirm_password_hint">Re-enter password</string>
+    <string name="btn_register">Create Account</string>
+    <string name="have_account">Already have an account? </string>
+    <string name="login">Login</string>
+
+    <!-- Home -->
+    <string name="good_morning">Good Morning,</string>
+    <string name="good_afternoon">Good Afternoon,</string>
+    <string name="good_evening">Good Evening,</string>
+    <string name="medicines_label">Medicines</string>
+    <string name="warnings_label">Warnings</string>
+    <string name="today_label">Today</string>
+    <string name="scan_medicine">Scan Medicine</string>
+    <string name="scan_subtitle">Tap to scan barcode for medicine info</string>
+    <string name="my_medicines">My Medicines</string>
+    <string name="see_all">See all</string>
+
+    <!-- Medicines -->
+    <string name="search_hint">Search medicine name...</string>
+    <string name="add_medicine">+ Add Medicine</string>
+    <string name="no_medicines">No medicines added yet\nTap + to add your first medicine 💊</string>
+
+    <!-- Risk -->
+    <string name="safe">✓ Safe</string>
+    <string name="low_risk">⚠ Low Risk</string>
+    <string name="medium_risk">⚠ Medium Risk</string>
+    <string name="high_risk">🔴 High Risk</string>
+    <string name="interaction_detected">Interaction Detected!</string>
+
+    <!-- Profile -->
+    <string name="profile">Profile</string>
+    <string name="edit_profile">Edit Profile</string>
+    <string name="logout">Logout</string>
+    <string name="weight_hint">Weight (kg)</string>
+    <string name="height_hint">Height (cm)</string>
+    <string name="age_hint">Age</string>
+    <string name="btn_save">Save Changes</string>
+
+    <!-- Onboarding -->
+    <string name="onboard1_title">Track Your Medicines 💊</string>
+    <string name="onboard1_desc">Keep all your medicines organized in one place. Never miss a dose again.</string>
+    <string name="onboard2_title">Smart Conflict Check 🔍</string>
+    <string name="onboard2_desc">We automatically check for dangerous drug interactions to keep you safe.</string>
+    <string name="onboard3_title">Daily Reminders ⏰</string>
+    <string name="onboard3_desc">Get timely notifications so you always take your medicine at the right time.</string>
+    <string name="btn_next">Next</string>
+    <string name="btn_get_started">Get Started</string>
+    <string name="btn_skip">Skip</string>
+</resources>

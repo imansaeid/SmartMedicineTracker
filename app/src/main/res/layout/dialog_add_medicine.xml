@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_bottom_sheet">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="32dp">
+
+        <!-- Handle -->
+        <View
+            android:layout_width="40dp"
+            android:layout_height="4dp"
+            android:background="#E0E7FF"
+            android:layout_gravity="center"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Title -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add Medicine 💊"
+            android:textColor="#1E1B4B"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginStart="20dp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- METHOD TABS -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginBottom="16dp">
+
+            <Button android:id="@+id/btnTabType"
+                android:layout_width="0dp" android:layout_height="44dp"
+                android:layout_weight="1" android:text="📝 Type Name"
+                android:textColor="#FFFFFF" android:textSize="12sp" android:textStyle="bold"
+                android:background="@drawable/bg_btn_primary"
+                android:stateListAnimator="@null"
+                android:layout_marginEnd="4dp" />
+
+            <Button android:id="@+id/btnTabPhoto"
+                android:layout_width="0dp" android:layout_height="44dp"
+                android:layout_weight="1" android:text="📷 Take Photo"
+                android:textColor="#6366F1" android:textSize="12sp" android:textStyle="bold"
+                android:background="@drawable/bg_btn_outline_primary"
+                android:stateListAnimator="@null"
+                android:layout_marginStart="4dp" />
+        </LinearLayout>
+
+        <!-- METHOD 1: TYPE -->
+        <LinearLayout
+            android:id="@+id/layoutTypeMethod"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="visible">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="SEARCH MEDICINE" android:textColor="#8B5CF6" android:textSize="11sp"
+                android:textStyle="bold" android:layout_marginStart="20dp"
+                android:layout_marginBottom="6dp" />
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="50dp"
+                android:background="@drawable/bg_input_field" android:gravity="center_vertical"
+                android:paddingStart="16dp" android:paddingEnd="6dp"
+                android:layout_marginStart="20dp" android:layout_marginEnd="20dp">
+                <EditText android:id="@+id/etSearchMedicine"
+                    android:layout_width="0dp" android:layout_height="match_parent"
+                    android:layout_weight="1" android:background="@null"
+                    android:hint="Type medicine name..."
+                    android:textColor="#1E1B4B" android:textSize="14sp"
+                    android:inputType="text" android:maxLines="1" />
+                <Button android:id="@+id/btnSearch"
+                    android:layout_width="72dp" android:layout_height="38dp"
+                    android:text="Search" android:textColor="#FFFFFF" android:textSize="11sp"
+                    android:background="@drawable/bg_btn_primary"
+                    android:stateListAnimator="@null" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- METHOD 2: PHOTO -->
+        <LinearLayout
+            android:id="@+id/layoutPhotoMethod"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp">
+
+            <FrameLayout android:layout_width="match_parent" android:layout_height="160dp"
+                android:background="@drawable/bg_scan_banner">
+                <LinearLayout android:id="@+id/layoutPhotoPlaceholder"
+                    android:layout_width="match_parent" android:layout_height="match_parent"
+                    android:orientation="vertical" android:gravity="center">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="📷" android:textSize="40sp" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Take a photo of the medicine"
+                        android:textColor="#6366F1" android:textSize="13sp"
+                        android:textStyle="bold" android:layout_marginTop="8dp" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="We'll recognize it automatically 🔍"
+                        android:textColor="#8B5CF6" android:textSize="11sp"
+                        android:layout_marginTop="2dp" />
+                </LinearLayout>
+                <ImageView android:id="@+id/ivCapturedPhoto"
+                    android:layout_width="match_parent" android:layout_height="match_parent"
+                    android:scaleType="centerCrop" android:visibility="gone"
+                    android:contentDescription="Captured" />
+            </FrameLayout>
+
+            <Button android:id="@+id/btnTakePhoto"
+                android:layout_width="match_parent" android:layout_height="48dp"
+                android:text="📷 OPEN CAMERA"
+                android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold"
+                android:background="@drawable/bg_btn_primary"
+                android:stateListAnimator="@null"
+                android:layout_marginTop="12dp" />
+        </LinearLayout>
+
+        <ProgressBar android:id="@+id/progressSearchBar"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_gravity="center" android:indeterminateTint="#8B5CF6"
+            android:visibility="gone" />
+
+        <!-- Selected Medicine -->
+        <LinearLayout android:id="@+id/layoutSelectedMed"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical"
+            android:background="@drawable/bg_scan_banner" android:padding="10dp"
+            android:layout_marginStart="20dp" android:layout_marginEnd="20dp"
+            android:layout_marginTop="8dp" android:visibility="gone">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="✓ " android:textColor="#16A34A"
+                android:textSize="16sp" android:textStyle="bold" />
+            <TextView android:id="@+id/tvSelectedMedName"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="#1E1B4B" android:textSize="13sp" android:textStyle="bold" />
+        </LinearLayout>
+
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+            android:background="#E0E7FF"
+            android:layout_marginStart="20dp" android:layout_marginEnd="20dp"
+            android:layout_marginTop="16dp" android:layout_marginBottom="16dp" />
+
+        <!-- MEDICINE TYPE -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="MEDICINE TYPE" android:textColor="#8B5CF6"
+            android:textSize="11sp" android:textStyle="bold"
+            android:layout_marginStart="20dp" android:layout_marginBottom="6dp" />
+
+        <RadioGroup android:id="@+id/rgMedType"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginStart="20dp" android:layout_marginEnd="20dp"
+            android:layout_marginBottom="12dp">
+            <RadioButton android:id="@+id/rbPermanent"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:text="🔵 Permanent&#10;(Lifelong)"
+                android:textColor="#1E1B4B" android:textSize="13sp"
+                android:buttonTint="#6366F1" android:checked="true" />
+            <RadioButton android:id="@+id/rbTemporary"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:text="🟡 Temporary&#10;(Course)"
+                android:textColor="#1E1B4B" android:textSize="13sp"
+                android:buttonTint="#6366F1" />
+        </RadioGroup>
+
+        <!-- DURATION (Temporary only) -->
+        <LinearLayout android:id="@+id/layoutDuration"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:visibility="gone">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="COURSE DURATION" android:textColor="#8B5CF6"
+                android:textSize="11sp" android:textStyle="bold"
+                android:layout_marginStart="20dp" android:layout_marginBottom="6dp" />
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginStart="20dp" android:layout_marginEnd="20dp"
+                android:layout_marginBottom="8dp">
+                <Button android:id="@+id/btnDur7"
+                    android:layout_width="0dp" android:layout_height="40dp"
+                    android:layout_weight="1" android:text="7 DAYS"
+                    android:textColor="#6366F1" android:textSize="11sp"
+                    android:background="@drawable/bg_btn_outline_primary"
+                    android:stateListAnimator="@null" android:layout_marginEnd="4dp" />
+                <Button android:id="@+id/btnDur14"
+                    android:layout_width="0dp" android:layout_height="40dp"
+                    android:layout_weight="1" android:text="14 DAYS"
+                    android:textColor="#6366F1" android:textSize="11sp"
+                    android:background="@drawable/bg_btn_outline_primary"
+                    android:stateListAnimator="@null"
+                    android:layout_marginStart="2dp" android:layout_marginEnd="2dp" />
+                <Button android:id="@+id/btnDur30"
+                    android:layout_width="0dp" android:layout_height="40dp"
+                    android:layout_weight="1" android:text="30 DAYS"
+                    android:textColor="#6366F1" android:textSize="11sp"
+                    android:background="@drawable/bg_btn_outline_primary"
+                    android:stateListAnimator="@null" android:layout_marginStart="4dp" />
+            </LinearLayout>
+
+            <!-- OTHERS label above the box -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="OTHERS"
+                android:textColor="#8B5CF6"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:layout_marginStart="20dp"
+                android:layout_marginBottom="6dp" />
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="50dp"
+                android:background="@drawable/bg_input_field" android:gravity="center_vertical"
+                android:paddingStart="16dp" android:paddingEnd="16dp"
+                android:layout_marginStart="20dp" android:layout_marginEnd="20dp"
+                android:layout_marginBottom="12dp">
+                <EditText android:id="@+id/etCustomDuration"
+                    android:layout_width="match_parent" android:layout_height="match_parent"
+                    android:background="@null" android:hint="Enter number of days..."
+                    android:textColor="#1E1B4B" android:textSize="14sp"
+                    android:inputType="number" android:maxLines="1" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- DOSAGE -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="DOSAGE" android:textColor="#8B5CF6" android:textSize="11sp"
+            android:textStyle="bold" android:layout_marginStart="20dp"
+            android:layout_marginBottom="6dp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="50dp"
+            android:background="@drawable/bg_input_field" android:gravity="center_vertical"
+            android:paddingStart="16dp" android:paddingEnd="16dp"
+            android:layout_marginStart="20dp" android:layout_marginEnd="20dp"
+            android:layout_marginBottom="16dp">
+            <EditText android:id="@+id/etDosage"
+                android:layout_width="match_parent" android:layout_height="match_parent"
+                android:background="@null" android:hint="e.g. 1 tablet, 5ml"
+                android:textColor="#1E1B4B" android:textSize="14sp"
+                android:inputType="text" android:maxLines="1" />
+        </LinearLayout>
+
+        <!-- FREQUENCY -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="HOW MANY TIMES PER DAY?" android:textColor="#8B5CF6"
+            android:textSize="11sp" android:textStyle="bold"
+            android:layout_marginStart="20dp" android:layout_marginBottom="8dp" />
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginStart="20dp" android:layout_marginEnd="20dp"
+            android:layout_marginBottom="16dp">
+            <Button android:id="@+id/btnFreq1"
+                android:layout_width="0dp" android:layout_height="48dp"
+                android:layout_weight="1" android:text="1X"
+                android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold"
+                android:background="@drawable/bg_btn_primary"
+                android:stateListAnimator="@null" android:layout_marginEnd="4dp" />
+            <Button android:id="@+id/btnFreq2"
+                android:layout_width="0dp" android:layout_height="48dp"
+                android:layout_weight="1" android:text="2X"
+                android:textColor="#6366F1" android:textSize="16sp" android:textStyle="bold"
+                android:background="@drawable/bg_btn_outline_primary"
+                android:stateListAnimator="@null"
+                android:layout_marginStart="2dp" android:layout_marginEnd="2dp" />
+            <Button android:id="@+id/btnFreq3"
+                android:layout_width="0dp" android:layout_height="48dp"
+                android:layout_weight="1" android:text="3X"
+                android:textColor="#6366F1" android:textSize="16sp" android:textStyle="bold"
+                android:background="@drawable/bg_btn_outline_primary"
+                android:stateListAnimator="@null"
+                android:layout_marginStart="2dp" android:layout_marginEnd="2dp" />
+            <Button android:id="@+id/btnFreq4"
+                android:layout_width="0dp" android:layout_height="48dp"
+                android:layout_weight="1" android:text="4X"
+                android:textColor="#6366F1" android:textSize="16sp" android:textStyle="bold"
+                android:background="@drawable/bg_btn_outline_primary"
+                android:stateListAnimator="@null" android:layout_marginStart="4dp" />
+        </LinearLayout>
+
+        <!-- SET DOSE TIMES — dynamic rows with time + dropdown -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="SET DOSE TIMES 🕐" android:textColor="#8B5CF6"
+            android:textSize="11sp" android:textStyle="bold"
+            android:layout_marginStart="20dp" android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:id="@+id/layoutTimePickers"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginBottom="16dp" />
+
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+            android:background="#E0E7FF"
+            android:layout_marginStart="20dp" android:layout_marginEnd="20dp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- ADD BUTTON -->
+        <Button android:id="@+id/btnConfirmAdd"
+            android:layout_width="match_parent" android:layout_height="56dp"
+            android:text="ADD MEDICINE →"
+            android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold"
+            android:background="@drawable/bg_btn_primary"
+            android:stateListAnimator="@null" android:elevation="6dp"
+            android:layout_marginStart="20dp" android:layout_marginEnd="20dp" />
+
+    </LinearLayout>
+</ScrollView>
