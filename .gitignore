@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+# Android
 *.iml
 .gradle
 /local.properties
@@ -14,8 +14,14 @@
 .externalNativeBuild
 .cxx
 local.properties
-=======
+google-services.json
+
+# Django / Python
 firebase_credentials.json
 __pycache__/
 *.pyc
->>>>>>> c3df22f70433dfaca7a7abad4b6b14a8f90ac18e
+*.pyo
+.env
+venv/
+env/
+.venv/

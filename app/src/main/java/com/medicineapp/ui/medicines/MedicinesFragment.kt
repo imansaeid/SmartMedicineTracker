@@ -2,12 +2,7 @@ package com.medicineapp.ui.medicines
 
 import android.Manifest
 import android.app.Activity
-import android.app.AlarmManager
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
 import android.app.TimePickerDialog
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -28,6 +23,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.mlkit.vision.common.InputImage
+import com.medicineapp.notifications.NotificationHelper
+import com.medicineapp.ui.scan.ScanActivity
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import com.medicineapp.R
@@ -37,7 +34,6 @@ import com.medicineapp.data.models.Medicine
 import com.medicineapp.data.models.UserMedicine
 import com.medicineapp.data.network.RetrofitClient
 import com.medicineapp.data.network.SessionManager
-import com.medicineapp.notifications.ReminderReceiver
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -71,6 +67,20 @@ class MedicinesFragment : Fragment() {
         session = SessionManager(requireContext())
         createNotificationChannel()
 
+        // طلب إذن الإشعارات على Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    requireContext(), Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    requireActivity(),
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    200
+                )
+            }
+        }
+
         val rvMedicines = view.findViewById<RecyclerView>(R.id.rvMedicines)
         val btnAdd      = view.findViewById<Button>(R.id.btnAddMedicine)
         val progressBar = view.findViewById<ProgressBar>(R.id.progressBar)
@@ -87,7 +97,7 @@ class MedicinesFragment : Fragment() {
         progressBar.visibility = View.VISIBLE
         lifecycleScope.launch {
             try {
-                val resp = RetrofitClient.api.getUserMedicines(session.getBearerToken())
+                val resp = RetrofitClient.getApi(requireContext()).getUserMedicines(session.getBearerToken())
                 if (resp.isSuccessful) {
                     userMedicines.clear()
                     userMedicines.addAll(resp.body() ?: emptyList())
@@ -191,22 +201,9 @@ class MedicinesFragment : Fragment() {
                                 toast("⚠️ Could not read text. Please type manually.")
                                 btnTabType.performClick()
                             } else {
-                                val biggestBlock = result.textBlocks
-                                    .maxByOrNull { block ->
-                                        val area = (block.boundingBox?.width() ?: 0) * (block.boundingBox?.height() ?: 0)
-                                        area
-                                    }
-
-                                val rawName = biggestBlock?.text?.split(" ")?.get(0) ?: ""
-
-                                val cleanName = rawName
-                                    .replace("İ", "I").replace("ı", "i")
-                                    .replace("Ş", "S").replace("ş", "s")
-                                    .replace("Ğ", "G").replace("ğ", "g")
-                                    .replace("Ü", "U").replace("ü", "u")
-                                    .replace("Ö", "O").replace("ö", "o")
-                                    .replace("Ç", "C").replace("ç", "c")
-                                    .filter { it.isLetter() }
+                                // اجمع كل النص واستخرج اسم الدواء بشكل صحيح
+                                val allText = result.textBlocks.joinToString(" ") { it.text }
+                                val cleanName = ScanActivity.extractMedicineName(allText)
 
                                 Log.d("OCR_RESULT", "Clean Name: $cleanName")
 
@@ -217,17 +214,30 @@ class MedicinesFragment : Fragment() {
                                     lifecycleScope.launch {
                                         try {
                                             progressBar.visibility = View.VISIBLE
-                                            val resp = RetrofitClient.api.searchMedicine(
-                                                session.getBearerToken(), cleanName
-                                            )
-                                            if (resp.isSuccessful && !resp.body().isNullOrEmpty()) {
-                                                val med = resp.body()!![0]
-                                                selectedMedicine = med
-                                                etDosage.setText(med.strength ?: "")
-                                                tvSelectedMedName.text = "✅ Found: ${med.name}"
-                                                layoutSelectedMed.visibility = View.VISIBLE
-                                                toast("✅ ${med.name} detected!")
-                                            } else {
+                                            // جرب عدة أشكال للكتابة
+                                            val variants = listOf(
+                                                cleanName,
+                                                cleanName.replaceFirstChar { it.uppercase() },
+                                                cleanName.uppercase(),
+                                                cleanName.lowercase()
+                                            ).distinct()
+
+                                            var found = false
+                                            for (query in variants) {
+                                                val resp = RetrofitClient.getApi(requireContext())
+                                                    .searchMedicine(session.getBearerToken(), query)
+                                                if (resp.isSuccessful && !resp.body().isNullOrEmpty()) {
+                                                    val med = resp.body()!![0]
+                                                    selectedMedicine = med
+                                                    etDosage.setText(med.strength ?: "")
+                                                    tvSelectedMedName.text = "✅ Found: ${med.name}"
+                                                    layoutSelectedMed.visibility = View.VISIBLE
+                                                    toast("✅ ${med.name} detected!")
+                                                    found = true
+                                                    break
+                                                }
+                                            }
+                                            if (!found) {
                                                 toast("❌ '$cleanName' not found. Try typing manually.")
                                                 btnTabType.performClick()
                                                 etSearch.setText(cleanName)
@@ -250,21 +260,37 @@ class MedicinesFragment : Fragment() {
             cameraLauncher.launch(Intent(MediaStore.ACTION_IMAGE_CAPTURE))
         }
 
-        // ── Search ──
+        // ── Search — بيجرب عدة أشكال للكتابة تلقائياً ──
         btnSearch.setOnClickListener {
-            val q = etSearch.text.toString().trim()
-            if (q.isEmpty()) { toast("Enter medicine name"); return@setOnClickListener }
+            val raw = etSearch.text.toString().trim()
+            if (raw.isEmpty()) { toast("Enter medicine name"); return@setOnClickListener }
             progressBar.visibility = View.VISIBLE
             lifecycleScope.launch {
                 try {
-                    val resp = RetrofitClient.api.searchMedicine(session.getBearerToken(), q)
-                    if (resp.isSuccessful && !resp.body().isNullOrEmpty()) {
-                        selectedMedicine = resp.body()!![0]
-                        etDosage.setText(selectedMedicine!!.strength ?: "")
-                        tvSelectedMedName.text = "✅ Selected: ${selectedMedicine!!.name}"
-                        layoutSelectedMed.visibility = View.VISIBLE
-                        toast("✅ Found: ${selectedMedicine!!.name}")
-                    } else toast("No medicines found")
+                    // جرب: النص الأصلي، أول حرف كبير، كل الأحرف كبيرة، كل الأحرف صغيرة
+                    val variants = listOf(
+                        raw,
+                        raw.replaceFirstChar { it.uppercase() },
+                        raw.uppercase(),
+                        raw.lowercase()
+                    ).distinct()
+
+                    var found = false
+                    for (query in variants) {
+                        val resp = RetrofitClient.getApi(requireContext())
+                            .searchMedicine(session.getBearerToken(), query)
+                        if (resp.isSuccessful && !resp.body().isNullOrEmpty()) {
+                            selectedMedicine = resp.body()!![0]
+                            etDosage.setText(selectedMedicine!!.strength ?: "")
+                            tvSelectedMedName.text = "✅ Selected: ${selectedMedicine!!.name}"
+                            layoutSelectedMed.visibility = View.VISIBLE
+                            toast("✅ Found: ${selectedMedicine!!.name}")
+                            found = true
+                            break
+                        }
+                    }
+                    if (!found) toast("No medicines found for: \"$raw\"")
+
                 } catch (e: Exception) { toast("Search failed") }
                 finally { progressBar.visibility = View.GONE }
             }
@@ -330,17 +356,17 @@ class MedicinesFragment : Fragment() {
                     ).also { it.setMargins(0, 0, 0, 10) }
                 }
 
-                // Time button — dark blue like in photo
+                // Time button — dark blue, white text
                 val btnTime = Button(requireContext()).apply {
                     text = defaultTime
-                    textSize = 16f
-                    setTextColor(0xFF6366F1.toInt())
-                    background = resources.getDrawable(R.drawable.bg_btn_primary, null)
+                    textSize = 15f
                     setTextColor(0xFFFFFFFF.toInt())
+                    background = resources.getDrawable(R.drawable.bg_btn_primary, null)
                     stateListAnimator = null
+                    isAllCaps = false
                     layoutParams = LinearLayout.LayoutParams(
-                        dpToPx(100), dpToPx(52)
-                    ).also { it.setMargins(0, 0, 12, 0) }
+                        dpToPx(105), dpToPx(52)
+                    ).also { it.setMargins(0, 0, 10, 0) }
                 }
                 btnTime.setOnClickListener {
                     val parts = selectedTimes[index].split(":")
@@ -353,25 +379,46 @@ class MedicinesFragment : Fragment() {
                     }, hour, minute, true).show()
                 }
 
-                // Spinner — fills remaining space
-                val spinner = Spinner(requireContext()).apply {
-                    layoutParams = LinearLayout.LayoutParams(
-                        0, dpToPx(52), 1f
-                    )
-                    background = resources.getDrawable(R.drawable.bg_input_field, null)
-                    setPadding(12, 0, 12, 0)
-                    val spinnerAdapter = ArrayAdapter(
-                        requireContext(),
-                        android.R.layout.simple_spinner_item,
-                        timingOptions
-                    ).apply {
-                        setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                // Spinner — خلفية بيضاء + خط أسود
+                val spinner = Spinner(requireContext())
+                spinner.layoutParams = LinearLayout.LayoutParams(0, dpToPx(52), 1f)
+                spinner.setBackgroundColor(android.graphics.Color.WHITE)
+                spinner.setPadding(12, 0, 12, 0)
+
+                // Adapter مخصص — خلفية بيضاء + نص أسود في الـ selected view
+                val spinnerAdapter = object : ArrayAdapter<String>(
+                    requireContext(),
+                    android.R.layout.simple_spinner_item,
+                    timingOptions
+                ) {
+                    override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                        val view = super.getView(position, convertView, parent)
+                        (view as? TextView)?.apply {
+                            setTextColor(android.graphics.Color.BLACK)
+                            setBackgroundColor(android.graphics.Color.WHITE)
+                            textSize = 13f
+                            setPadding(8, 0, 8, 0)
+                        }
+                        return view
                     }
-                    adapter = spinnerAdapter
+                    override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                        val view = super.getDropDownView(position, convertView, parent)
+                        (view as? TextView)?.apply {
+                            setTextColor(android.graphics.Color.BLACK)
+                            setBackgroundColor(android.graphics.Color.WHITE)
+                            textSize = 13f
+                            setPadding(16, 12, 16, 12)
+                        }
+                        return view
+                    }
                 }
+                spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                spinner.adapter = spinnerAdapter
+
                 spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                     override fun onItemSelected(parent: AdapterView<*>, v: View?, pos: Int, id: Long) {
                         timingInstructions[index] = timingOptions[pos]
+                        (v as? TextView)?.setTextColor(android.graphics.Color.BLACK)
                     }
                     override fun onNothingSelected(parent: AdapterView<*>) {}
                 }
@@ -437,17 +484,17 @@ class MedicinesFragment : Fragment() {
                         end_date      = endDate,
                         duration_type = if (isTemporary) "temporary" else "permanent"
                     )
-                    val resp = RetrofitClient.api.addMedicine(session.getBearerToken(), request)
+                    val resp = RetrofitClient.getApi(requireContext()).addMedicine(session.getBearerToken(), request)
                     val body = resp.body()
 
-                    if (resp.isSuccessful && body != null) {
-                        dialog.dismiss()
-                        body.data?.let { userMedicines.add(0, it); adapter.notifyItemInserted(0) }
-
-                        body.data?.let { userMed ->
-                            selectedTimes.forEachIndexed { i, time ->
+                    // دالة داخلية: أضف للقائمة المحلية وجدول الإشعارات
+                    fun finalizeAdd(userMed: com.medicineapp.data.models.UserMedicine) {
+                        userMedicines.add(0, userMed)
+                        adapter.notifyItemInserted(0)
+                        selectedTimes.forEachIndexed { i, time ->
+                            lifecycleScope.launch {
                                 try {
-                                    RetrofitClient.api.addSchedule(
+                                    RetrofitClient.getApi(requireContext()).addSchedule(
                                         session.getBearerToken(),
                                         AddScheduleRequest(
                                             medicine   = userMed.medicineId,
@@ -457,34 +504,100 @@ class MedicinesFragment : Fragment() {
                                         )
                                     )
                                 } catch (e: Exception) { Log.e("SCHEDULE", "Failed: $time") }
+                            }
+                            scheduleLocalReminder(
+                                medicineId   = userMed.medicineId,
+                                medicineName = med.name,
+                                timeStr      = time,
+                                instruction  = timingInstructions.getOrElse(i) { "" },
+                                doseIndex    = i
+                            )
+                        }
+                    }
 
-                                scheduleLocalReminder(
-                                    medicineId   = userMed.medicineId,
-                                    medicineName = med.name,
-                                    timeStr      = time,
-                                    instruction  = timingInstructions.getOrElse(i) { "" },
-                                    doseIndex    = i
-                                )
+                    if (resp.isSuccessful && body != null) {
+
+                        Log.d("ADD_MED", "severity=${body.severity} warning=${body.warning} desc=${body.description}")
+
+                        when (body.severity?.trim()?.lowercase()) {
+
+                            // ── تعارض متوسط — اسأل المستخدم ──
+                            "medium" -> {
+                                AlertDialog.Builder(requireContext())
+                                    .setTitle("🟡 Moderate Interaction Detected")
+                                    .setMessage(
+                                        "${body.description ?: ""}\n\n" +
+                                        "Are you sure you want to add this medicine?"
+                                    )
+                                    .setPositiveButton("✅ Yes, Add") { _, _ ->
+                                        body.data?.let { finalizeAdd(it) }
+                                        dialog.dismiss()
+                                        toast("✅ Medicine added with warning")
+                                    }
+                                    .setNegativeButton("❌ No, Cancel") { _, _ ->
+                                        // احذف من السيرفر لأنه اتضاف قبل تأكيدنا
+                                        lifecycleScope.launch {
+                                            body.data?.medicineId?.let { id ->
+                                                try {
+                                                    RetrofitClient.getApi(requireContext())
+                                                        .deleteMedicine(session.getBearerToken(), id)
+                                                } catch (e: Exception) { }
+                                            }
+                                        }
+                                        toast("❌ Medicine not added")
+                                    }
+                                    .setCancelable(false)
+                                    .show()
+                            }
+
+                            // ── تعارض منخفض — اسأل المستخدم ──
+                            "low" -> {
+                                AlertDialog.Builder(requireContext())
+                                    .setTitle("🟢 Minor Interaction Detected")
+                                    .setMessage(
+                                        "${body.description ?: ""}\n\n" +
+                                        "Are you sure you want to add this medicine?"
+                                    )
+                                    .setPositiveButton("✅ Yes, Add") { _, _ ->
+                                        body.data?.let { finalizeAdd(it) }
+                                        dialog.dismiss()
+                                        toast("✅ Medicine added")
+                                    }
+                                    .setNegativeButton("❌ No, Cancel") { _, _ ->
+                                        lifecycleScope.launch {
+                                            body.data?.medicineId?.let { id ->
+                                                try {
+                                                    RetrofitClient.getApi(requireContext())
+                                                        .deleteMedicine(session.getBearerToken(), id)
+                                                } catch (e: Exception) { }
+                                            }
+                                        }
+                                        toast("❌ Medicine not added")
+                                    }
+                                    .setCancelable(false)
+                                    .show()
+                            }
+
+                            // ── تعارض عالي (200 مش 400) — أضف وحذّر ──
+                            "high" -> {
+                                body.data?.let { finalizeAdd(it) }
+                                dialog.dismiss()
+                                AlertDialog.Builder(requireContext())
+                                    .setTitle("🔴 High Risk!")
+                                    .setMessage("${body.description}\n\nPlease consult your doctor.")
+                                    .setPositiveButton("OK", null).show()
+                            }
+
+                            // ── لا يوجد تعارض ──
+                            else -> {
+                                body.data?.let { finalizeAdd(it) }
+                                dialog.dismiss()
+                                toast("✅ Medicine added!")
                             }
                         }
 
-                        when (body.severity) {
-                            "High"   -> AlertDialog.Builder(requireContext())
-                                .setTitle("🔴 High Risk!")
-                                .setMessage("${body.description}\n\nPlease consult your doctor.")
-                                .setPositiveButton("OK", null).show()
-                            "Medium" -> AlertDialog.Builder(requireContext())
-                                .setTitle("🟡 Moderate Interaction")
-                                .setMessage("${body.description}")
-                                .setPositiveButton("OK", null).show()
-                            "Low"    -> AlertDialog.Builder(requireContext())
-                                .setTitle("🟢 Minor Interaction")
-                                .setMessage(body.description ?: "")
-                                .setPositiveButton("OK", null).show()
-                            else     -> toast("✅ Medicine added!")
-                        }
-
                     } else if (resp.code() == 400) {
+                        // ══ HIGH RISK من السيرفر (400) — لا تتغير ══
                         AlertDialog.Builder(requireContext())
                             .setTitle("🔴 Cannot Add")
                             .setMessage("HIGH RISK!\n\n${body?.description ?: ""}\n\nPlease consult your doctor.")
@@ -506,47 +619,18 @@ class MedicinesFragment : Fragment() {
         medicineId: Int, medicineName: String,
         timeStr: String, instruction: String, doseIndex: Int
     ) {
-        try {
-            val parts  = timeStr.split(":")
-            val hour   = parts[0].toIntOrNull() ?: 8
-            val minute = parts[1].toIntOrNull() ?: 0
-            val cal = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, hour)
-                set(Calendar.MINUTE, minute)
-                set(Calendar.SECOND, 0)
-                if (before(Calendar.getInstance())) add(Calendar.DAY_OF_YEAR, 1)
-            }
-            val body = if (instruction.isNotEmpty() && instruction != "No Special Instruction")
-                "Time to take $medicineName ($instruction)"
-            else "Time to take $medicineName 💊"
-
-            val intent = Intent(requireContext(), ReminderReceiver::class.java).apply {
-                putExtra("medicine_name", medicineName)
-                putExtra("message", body)
-                putExtra("medicine_id", medicineId)
-            }
-            val pendingIntent = PendingIntent.getBroadcast(
-                requireContext(), medicineId * 10 + doseIndex, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            (requireContext().getSystemService(Context.ALARM_SERVICE) as AlarmManager)
-                .setRepeating(AlarmManager.RTC_WAKEUP, cal.timeInMillis,
-                    AlarmManager.INTERVAL_DAY, pendingIntent)
-        } catch (e: Exception) { Log.e("REMINDER", "Failed: ${e.message}") }
+        NotificationHelper.scheduleReminder(
+            context      = requireContext(),
+            medicineId   = medicineId,
+            medicineName = medicineName,
+            timeStr      = timeStr,
+            instruction  = instruction,
+            doseIndex    = doseIndex
+        )
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                "medicine_reminders", "Medicine Reminders",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Daily reminders to take your medicines"
-                enableVibration(true)
-            }
-            (requireContext().getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
-                .createNotificationChannel(channel)
-        }
+        NotificationHelper.createChannel(requireContext())
     }
 
     private fun confirmDelete(med: UserMedicine) {
@@ -556,7 +640,7 @@ class MedicinesFragment : Fragment() {
             .setPositiveButton("Delete") { _, _ ->
                 lifecycleScope.launch {
                     try {
-                        val resp = RetrofitClient.api.deleteMedicine(
+                        val resp = RetrofitClient.getApi(requireContext()).deleteMedicine(
                             session.getBearerToken(), med.medicineId
                         )
                         if (resp.isSuccessful) {

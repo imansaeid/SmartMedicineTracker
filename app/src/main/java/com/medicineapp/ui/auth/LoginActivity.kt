@@ -31,11 +31,32 @@ class LoginActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_login)
 
-        val etEmail    = findViewById<EditText>(R.id.etEmail)
-        val etPassword = findViewById<EditText>(R.id.etPassword)
-        val btnLogin   = findViewById<Button>(R.id.btnLogin)
-        val tvRegister = findViewById<TextView>(R.id.tvGoToRegister)
-        val progressBar = findViewById<ProgressBar>(R.id.progressBar)
+        val etEmail           = findViewById<EditText>(R.id.etEmail)
+        val etPassword        = findViewById<EditText>(R.id.etPassword)
+        val btnLogin          = findViewById<Button>(R.id.btnLogin)
+        val tvRegister        = findViewById<TextView>(R.id.tvGoToRegister)
+        val progressBar       = findViewById<ProgressBar>(R.id.progressBar)
+        val tvTogglePassword  = findViewById<TextView>(R.id.tvTogglePassword)
+
+        // ── زر العين — إظهار/إخفاء كلمة المرور ──
+        var isPasswordVisible = false
+        tvTogglePassword.setOnClickListener {
+            isPasswordVisible = !isPasswordVisible
+            if (isPasswordVisible) {
+                // أظهر النص
+                etPassword.inputType =
+                    android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                tvTogglePassword.text = "🙈"
+            } else {
+                // أخفيه مجدداً
+                etPassword.inputType =
+                    android.text.InputType.TYPE_CLASS_TEXT or
+                    android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+                tvTogglePassword.text = "👁"
+            }
+            // أبقِ المؤشر في نهاية النص
+            etPassword.setSelection(etPassword.text.length)
+        }
 
         btnLogin.setOnClickListener {
             val email    = etEmail.text.toString().trim()

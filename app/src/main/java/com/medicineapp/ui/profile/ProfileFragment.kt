@@ -8,6 +8,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.medicineapp.R
@@ -44,7 +45,7 @@ class ProfileFragment : Fragment() {
 
             lifecycleScope.launch {
                 try {
-                    val resp = RetrofitClient.api.updateProfile(
+                    val resp = RetrofitClient.getApi(requireContext()).updateProfile(
                         session.getBearerToken(),
                         mapOf("name" to newName)
                     )
@@ -61,6 +62,32 @@ class ProfileFragment : Fragment() {
         btnLogout.setOnClickListener {
             (activity as? HomeActivity)?.logout()
         }
+    }
+
+    private fun showServerUrlDialog() {
+        val currentUrl = RetrofitClient.getSavedUrl(requireContext())
+
+        val input = EditText(requireContext()).apply {
+            setText(currentUrl)
+            hint = "http://192.168.x.x:8000/"
+            setPadding(48, 24, 48, 24)
+        }
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("🌐 Server URL")
+            .setMessage("Enter your server IP:\n(مثال: http://192.168.1.46:8000/)")
+            .setView(input)
+            .setPositiveButton("Save") { _, _ ->
+                val newUrl = input.text.toString().trim()
+                if (newUrl.startsWith("http")) {
+                    RetrofitClient.saveUrl(requireContext(), newUrl)
+                    toast("✅ Server URL saved!")
+                } else {
+                    toast("❌ URL must start with http://")
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun toast(msg: String) =

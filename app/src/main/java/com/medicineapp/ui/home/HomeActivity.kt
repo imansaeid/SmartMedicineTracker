@@ -71,6 +71,12 @@ class HomeActivity : AppCompatActivity() {
         drawerLayout.openDrawer(GravityCompat.END)
     }
 
+    fun navigateToMedicines() {
+        val bottomNav = findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottomNav)
+        loadFragment(MedicinesFragment())
+        bottomNav.menu.findItem(R.id.nav_medicines)?.isChecked = true
+    }
+
     private fun loadFragment(fragment: Fragment) {
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragmentContainer, fragment)

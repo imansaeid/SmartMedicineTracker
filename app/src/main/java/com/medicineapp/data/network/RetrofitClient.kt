@@ -1,7 +1,5 @@
 package com.medicineapp.data.network
 
-
-
 import android.content.Context
 import android.content.SharedPreferences
 import okhttp3.OkHttpClient
@@ -12,9 +10,9 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    // ⚠️ Change this to your machine's IP when running on a real device
-    // Use 10.0.2.2 for emulator, or your LAN IP for physical device
-    const val BASE_URL = "http://192.168.1.46:8000/"
+    const val DEFAULT_BASE_URL = "http://192.168.1.45:8000/"
+    private const val PREFS_NAME = "MedicineAppPrefs"
+    private const val KEY_SERVER_URL = "server_url"
 
     private val logging = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
@@ -26,17 +24,40 @@ object RetrofitClient {
         .readTimeout(30, TimeUnit.SECONDS)
         .build()
 
+    // للاستخدام القديم — يستخدم الـ URL الافتراضي
     val api: ApiService by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
+        buildRetrofit(DEFAULT_BASE_URL).create(ApiService::class.java)
+    }
+
+    // الـ API الديناميكي — يقرأ الـ URL المحفوظ من SharedPreferences
+    fun getApi(context: Context): ApiService {
+        val url = getSavedUrl(context)
+        return buildRetrofit(url).create(ApiService::class.java)
+    }
+
+    fun getSavedUrl(context: Context): String {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getString(KEY_SERVER_URL, DEFAULT_BASE_URL) ?: DEFAULT_BASE_URL
+    }
+
+    fun saveUrl(context: Context, url: String) {
+        val cleanUrl = if (url.endsWith("/")) url else "$url/"
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString(KEY_SERVER_URL, cleanUrl)
+            .apply()
+    }
+
+    private fun buildRetrofit(baseUrl: String): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
             .client(httpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create(ApiService::class.java)
     }
 }
 
-// ─── Session Manager (SharedPreferences) ─────────────
+// ─── Session Manager ──────────────────────────────────────────
 class SessionManager(context: Context) {
 
     private val prefs: SharedPreferences =
@@ -58,18 +79,11 @@ class SessionManager(context: Context) {
     }
 
     fun getToken(): String? = prefs.getString(KEY_TOKEN, null)
-
-    /** Returns "Bearer <token>" ready for Retrofit headers */
     fun getBearerToken(): String = "Bearer ${getToken()}"
-
     fun getUserId(): Int = prefs.getInt(KEY_USER_ID, -1)
-
     fun getName(): String? = prefs.getString(KEY_NAME, null)
-
     fun saveEmail(email: String) = prefs.edit().putString(KEY_EMAIL, email).apply()
     fun getEmail(): String? = prefs.getString(KEY_EMAIL, null)
-
     fun isLoggedIn(): Boolean = getToken() != null
-
     fun clearSession() = prefs.edit().clear().apply()
 }

@@ -33,6 +33,8 @@
         <activity android:name=".ui.home.HomeActivity" android:exported="false" />
         <activity android:name=".ui.scan.ScanActivity" android:exported="false"
             android:screenOrientation="portrait" />
+        <activity android:name=".ui.scan.ScanResultActivity" android:exported="false"
+            android:screenOrientation="portrait" />
         <activity android:name=".ui.medicines.ConflictResultActivity" android:exported="false" />
 
         <service android:name=".notifications.MedicineFirebaseService" android:exported="false">
@@ -41,9 +43,12 @@
             </intent-filter>
         </service>
 
-        <receiver android:name=".notifications.BootReceiver" android:exported="true">
+        <receiver android:name=".notifications.BootReceiver"
+            android:enabled="true"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
             </intent-filter>
         </receiver>
 

@@ -1,38 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0A0A0F">
-
-    <!-- Camera Preview -->
-    <androidx.camera.view.PreviewView
-        android:id="@+id/previewView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
-    <!-- Dark overlay top -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="140dp"
-        android:layout_gravity="top"
-        android:background="@drawable/bg_scan_overlay_top" />
-
-    <!-- Dark overlay bottom -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:layout_gravity="bottom"
-        android:background="@drawable/bg_scan_overlay_bottom" />
+    android:orientation="vertical"
+    android:background="#F5F7FF">
 
     <!-- Top bar -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="top"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:padding="16dp"
-        android:paddingTop="44dp">
+        android:paddingTop="44dp"
+        android:background="@drawable/bg_header_rounded">
 
         <ImageButton
             android:id="@+id/btnBack"
@@ -49,72 +30,91 @@
             android:layout_weight="1"
             android:text="Scan Medicine"
             android:textColor="#FFFFFF"
-            android:textSize="18sp"
+            android:textSize="20sp"
             android:textStyle="bold"
             android:gravity="center" />
 
         <View android:layout_width="40dp" android:layout_height="40dp" />
     </LinearLayout>
 
-    <!-- Scan frame center -->
+    <!-- Center content -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:orientation="vertical"
-        android:gravity="center">
+        android:gravity="center"
+        android:padding="24dp">
 
-        <View
-            android:layout_width="260dp"
-            android:layout_height="160dp"
-            android:background="@drawable/bg_scan_frame_purple" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Point camera at the barcode"
-            android:textColor="#FFFFFF"
-            android:textSize="14sp"
-            android:layout_marginTop="20dp"
-            android:background="#44000000"
-            android:padding="10dp" />
-    </LinearLayout>
-
-    <!-- Bottom info panel -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:orientation="vertical"
-        android:padding="24dp"
-        android:gravity="center">
-
+        <!-- Camera placeholder card — مثل Add Medicine -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="220dp"
             android:background="@drawable/bg_card_white"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:gravity="center"
+            android:layout_marginBottom="24dp"
+            android:elevation="2dp">
 
             <TextView
-                android:id="@+id/tvScanStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="🔍 Scanning for barcode..."
+                android:text="📷"
+                android:textSize="56sp"
+                android:layout_marginBottom="12dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Take a photo of the medicine"
                 android:textColor="#1E1B4B"
-                android:textSize="14sp"
+                android:textSize="16sp"
                 android:textStyle="bold"
-                android:layout_marginBottom="8dp" />
+                android:gravity="center"
+                android:layout_marginBottom="6dp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="Medicine info will appear here"
+                android:text="We'll recognize it automatically 🔍"
                 android:textColor="#9CA3AF"
-                android:textSize="12sp" />
+                android:textSize="13sp"
+                android:gravity="center" />
         </LinearLayout>
+
+        <!-- Status text -->
+        <TextView
+            android:id="@+id/tvScanStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📷 Press the button to take a photo"
+            android:textColor="#6366F1"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Loading spinner -->
+        <ProgressBar
+            android:id="@+id/progressScan"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:indeterminateTint="#8B5CF6"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Open Camera button -->
+        <Button
+            android:id="@+id/btnCapture"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="📷 OPEN CAMERA"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:background="@drawable/bg_btn_primary"
+            android:stateListAnimator="@null"
+            android:elevation="4dp" />
+
     </LinearLayout>
 
-</FrameLayout>
+</LinearLayout>

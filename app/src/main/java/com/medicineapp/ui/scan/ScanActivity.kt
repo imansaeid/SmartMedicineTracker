@@ -1,35 +1,102 @@
 package com.medicineapp.ui.scan
 
-import android.Manifest
-import android.content.pm.PackageManager
+import android.app.Activity
+import android.content.Intent
+import android.graphics.Bitmap
 import android.os.Bundle
-import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
+import android.provider.MediaStore
+import android.view.View
+import android.widget.Button
+import android.widget.ImageButton
+import android.widget.ProgressBar
+import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.core.*
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import com.medicineapp.R
 import com.medicineapp.data.network.RetrofitClient
 import com.medicineapp.data.network.SessionManager
 import kotlinx.coroutines.launch
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 
 class ScanActivity : AppCompatActivity() {
 
-    private lateinit var cameraExecutor: ExecutorService
     private lateinit var session: SessionManager
-    private var isProcessing = false
+
+    // فتح كاميرا النظام تماماً مثل Add Medicine
+    private val cameraLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val bitmap = result.data?.extras?.get("data") as? Bitmap
+            if (bitmap != null) {
+                analyzePhoto(bitmap)
+            } else {
+                resetUI("❌ No photo captured. Try again.")
+            }
+        } else {
+            resetUI("📷 Press the button to take a photo")
+        }
+    }
 
     companion object {
-        private const val CAMERA_PERMISSION_CODE = 100
+
+        private fun normalizeText(text: String): String = text
+            .replace("İ", "I").replace("ı", "i")
+            .replace("Ş", "S").replace("ş", "s")
+            .replace("Ğ", "G").replace("ğ", "g")
+            .replace("Ü", "U").replace("ü", "u")
+            .replace("Ö", "O").replace("ö", "o")
+            .replace("Ç", "C").replace("ç", "c")
+
+        private fun isDosageWord(word: String): Boolean {
+            val dosage = Regex(
+                """^\d+[\.,]?\d*\s*(mg|ml|mcg|g|iu|%|tablet|kapsul|film|coated)?$""",
+                RegexOption.IGNORE_CASE
+            )
+            val attached = Regex(""".*\d+[\.,]?\d*(mg|ml|mcg|g|iu|%).*""", RegexOption.IGNORE_CASE)
+            return dosage.matches(word) || attached.matches(word) || word.matches(Regex("\\d+"))
+        }
+
+        /**
+         * يرجع قائمة من المرشحين مرتبة حسب حجم الـ text block (الأكبر أولاً)
+         * لأن اسم الدواء عادةً يكون بأكبر خط على العلبة
+         */
+        fun extractCandidates(ocrResult: Text): List<String> {
+            val seen       = mutableSetOf<String>()
+            val candidates = mutableListOf<String>()
+
+            // رتب الـ blocks حسب المساحة (الأكبر = الأهم)
+            val sortedBlocks = ocrResult.textBlocks.sortedByDescending {
+                it.boundingBox?.let { bb -> bb.width() * bb.height() } ?: 0
+            }
+
+            for (block in sortedBlocks) {
+                normalizeText(block.text)
+                    .split(Regex("[\\s\\n/|\\\\]+"))
+                    .map { it.replace(Regex("[^a-zA-Z0-9]"), "").trim() }
+                    .filter { w -> w.length >= 3 && w.any { it.isLetter() } && !isDosageWord(w) }
+                    .forEach { c ->
+                        if (c.uppercase() !in seen) {
+                            seen.add(c.uppercase())
+                            candidates.add(c)
+                        }
+                    }
+            }
+            return candidates
+        }
+
+        // للاستخدام في MedicinesFragment (backward compat)
+        fun extractMedicineName(rawText: String): String {
+            return normalizeText(rawText)
+                .split(Regex("[\\s/|\\\\]+"))
+                .map { it.replace(Regex("[^a-zA-Z0-9]"), "").trim() }
+                .filter { w -> w.length >= 3 && w.any { it.isLetter() } && !isDosageWord(w) }
+                .firstOrNull() ?: ""
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,183 +104,95 @@ class ScanActivity : AppCompatActivity() {
         setContentView(R.layout.activity_scan)
 
         session = SessionManager(this)
-        cameraExecutor = Executors.newSingleThreadExecutor()
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-            == PackageManager.PERMISSION_GRANTED) {
-            startCamera()
-        } else {
-            ActivityCompat.requestPermissions(
-                this, arrayOf(Manifest.permission.CAMERA), CAMERA_PERMISSION_CODE
-            )
-        }
-
-        findViewById<android.widget.ImageButton>(R.id.btnBack).setOnClickListener { finish() }
+        findViewById<ImageButton>(R.id.btnBack).setOnClickListener { finish() }
+        findViewById<Button>(R.id.btnCapture).setOnClickListener { openCamera() }
     }
 
-    private fun startCamera() {
-        val previewView = findViewById<PreviewView>(R.id.previewView)
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-
-        cameraProviderFuture.addListener({
-            val cameraProvider = cameraProviderFuture.get()
-
-            val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(previewView.surfaceProvider)
-            }
-
-            val imageAnalyzer = ImageAnalysis.Builder()
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build()
-                .also { analysis ->
-                    analysis.setAnalyzer(cameraExecutor) { imageProxy ->
-                        processOCR(imageProxy) // ← غيرنا من Barcode لـ OCR
-                    }
-                }
-
-            try {
-                cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(
-                    this,
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    preview,
-                    imageAnalyzer
-                )
-            } catch (e: Exception) {
-                Toast.makeText(this, "Camera failed: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
-
-        }, ContextCompat.getMainExecutor(this))
+    private fun openCamera() {
+        cameraLauncher.launch(Intent(MediaStore.ACTION_IMAGE_CAPTURE))
     }
 
-    @androidx.annotation.OptIn(androidx.camera.core.ExperimentalGetImage::class)
-    private fun processOCR(imageProxy: ImageProxy) {
-        if (isProcessing) { imageProxy.close(); return }
+    private fun analyzePhoto(bitmap: Bitmap) {
+        val btnCapture   = findViewById<Button>(R.id.btnCapture)
+        val progressScan = findViewById<ProgressBar>(R.id.progressScan)
+        val tvStatus     = findViewById<TextView>(R.id.tvScanStatus)
 
-        val mediaImage = imageProxy.image
-        if (mediaImage == null) { imageProxy.close(); return }
+        btnCapture.isEnabled    = false
+        progressScan.visibility = View.VISIBLE
+        tvStatus.text           = "⏳ Reading medicine name..."
 
-        val image = InputImage.fromMediaImage(
-            mediaImage,
-            imageProxy.imageInfo.rotationDegrees
-        )
+        // Scale up for better OCR
+        val scaledBitmap = if (bitmap.width < 640) {
+            val scale = 640f / bitmap.width
+            Bitmap.createScaledBitmap(bitmap, 640, (bitmap.height * scale).toInt(), true)
+        } else bitmap
 
-        val recognizer = TextRecognition.getClient(
-            TextRecognizerOptions.DEFAULT_OPTIONS
-        )
+        val image      = InputImage.fromBitmap(scaledBitmap, 0)
+        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
         recognizer.process(image)
             .addOnSuccessListener { result ->
-
-                // لو ما في نص = إضاءة سيئة
-                if (result.text.isEmpty()) {
-                    imageProxy.close()
-                    return@addOnSuccessListener
-                }
-
-                // اخذي أكبر block = اسم الدواء
-                val biggestBlock = result.textBlocks
-                    .maxByOrNull { it.boundingBox?.width() ?: 0 }
-
-                val rawName = biggestBlock?.text?.split(" ")?.get(0) ?: ""
-
-                // نظفي الحروف التركية
-                val cleanName = rawName
-                    .replace("İ", "I").replace("ı", "i")
-                    .replace("Ş", "S").replace("ş", "s")
-                    .replace("Ğ", "G").replace("ğ", "g")
-                    .replace("Ü", "U").replace("ü", "u")
-                    .replace("Ö", "O").replace("ö", "o")
-                    .replace("Ç", "C").replace("ç", "c")
-                    .filter { it.isLetter() }
-
-                if (cleanName.isNotEmpty() && !isProcessing) {
-                    isProcessing = true
-                    searchMedicineByName(cleanName)
-                }
-            }
-            .addOnCompleteListener { imageProxy.close() }
-    }
-
-    private fun searchMedicineByName(name: String) {
-        lifecycleScope.launch {
-            try {
-                val resp = RetrofitClient.api.searchMedicine(
-                    session.getBearerToken(), name
-                )
-                val results = resp.body()
-
-                if (resp.isSuccessful && !results.isNullOrEmpty()) {
-                    val med = results[0]
-                    runOnUiThread {
-                        AlertDialog.Builder(this@ScanActivity)
-                            .setTitle("💊 Medicine Found!")
-                            .setMessage(
-                                "Name: ${med.name}\n" +
-                                        "Form: ${med.form ?: "N/A"}\n" +
-                                        "Strength: ${med.strength ?: "N/A"}\n" +
-                                        "Active Ingredient: ${med.activeIngredient ?: "N/A"}\n\n" +
-                                        "${med.description ?: ""}"
-                            )
-                            .setPositiveButton("Go to My Medicines") { _, _ ->
-                                finish()
-                            }
-                            .setNegativeButton("Scan Again") { _, _ ->
-                                isProcessing = false
-                            }
-                            .setCancelable(false)
-                            .show()
-                    }
+                val candidates = extractCandidates(result)
+                if (candidates.isEmpty()) {
+                    tvStatus.text = "❌ Could not read text. Try again."
+                    resetUI(null)
                 } else {
-                    runOnUiThread {
-                        AlertDialog.Builder(this@ScanActivity)
-                            .setTitle("❌ Not Found")
-                            .setMessage(
-                                "No medicine found for: $name\n\n" +
-                                        "This medicine is not in our database yet.\n" +
-                                        "It will be added soon!"
-                            )
-                            .setPositiveButton("Scan Again") { _, _ ->
-                                isProcessing = false
-                            }
-                            .show()
+                    // جرب كل مرشح حتى تلاقي دواء في الـ API
+                    searchByCandidates(candidates)
+                }
+            }
+            .addOnFailureListener {
+                tvStatus.text = "❌ OCR failed. Try again."
+                resetUI(null)
+            }
+    }
+
+    private fun searchByCandidates(candidates: List<String>) {
+        val tvStatus = findViewById<TextView>(R.id.tvScanStatus)
+
+        lifecycleScope.launch {
+            for (name in candidates) {
+                try {
+                    runOnUiThread { tvStatus.text = "🔍 Trying: $name..." }
+
+                    val resp    = RetrofitClient.getApi(this@ScanActivity)
+                        .searchMedicine(session.getBearerToken(), name)
+                    val results = resp.body()
+
+                    if (resp.isSuccessful && !results.isNullOrEmpty()) {
+                        val med    = results[0]
+                        val intent = Intent(this@ScanActivity, ScanResultActivity::class.java).apply {
+                            putExtra("med_name",        med.name ?: name)
+                            putExtra("med_form",        med.form ?: "N/A")
+                            putExtra("med_strength",    med.strength ?: "N/A")
+                            putExtra("med_ingredient",  med.activeIngredient ?: "N/A")
+                            putExtra("med_description", med.description ?: "")
+                        }
+                        startActivity(intent)
+                        finish()
+                        return@launch   // وجدنا — وقف
                     }
+                } catch (e: Exception) {
+                    // جرب المرشح التالي
                 }
-            } catch (e: Exception) {
-                runOnUiThread {
-                    Toast.makeText(
-                        this@ScanActivity,
-                        "Search error: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    isProcessing = false
-                }
+            }
+
+            // كل المرشحين جربناهم وما لقينا شي
+            runOnUiThread {
+                tvStatus.text = "❌ Medicine not found. Try typing manually."
+                resetUI(null)
             }
         }
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == CAMERA_PERMISSION_CODE &&
-            grantResults.isNotEmpty() &&
-            grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            startCamera()
-        } else {
-            Toast.makeText(
-                this,
-                "Camera permission required for scanning",
-                Toast.LENGTH_LONG
-            ).show()
-            finish()
-        }
-    }
+    private fun resetUI(statusText: String?) {
+        val btnCapture   = findViewById<Button>(R.id.btnCapture)
+        val progressScan = findViewById<ProgressBar>(R.id.progressScan)
+        val tvStatus     = findViewById<TextView>(R.id.tvScanStatus)
 
-    override fun onDestroy() {
-        super.onDestroy()
-        cameraExecutor.shutdown()
+        btnCapture.isEnabled    = true
+        progressScan.visibility = View.GONE
+        if (statusText != null) tvStatus.text = statusText
     }
 }

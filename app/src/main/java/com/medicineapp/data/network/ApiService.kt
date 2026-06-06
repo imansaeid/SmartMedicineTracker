@@ -41,6 +41,11 @@ interface ApiService {
     ): Response<GenericResponse>
 
     // ── Interaction ───────────────────────────────────
+    @GET("api/interactions/count/")
+    suspend fun getInteractionCount(
+        @Header("Authorization") token: String
+    ): Response<Map<String, Int>>
+
     @GET("api/interactions/check/")
     suspend fun checkInteraction(
         @Header("Authorization") token: String,

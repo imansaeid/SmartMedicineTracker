@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="#F5F7FF">
 
+    <!-- ═══ HEADER ═══ -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -13,20 +13,22 @@
         android:orientation="vertical"
         android:padding="20dp"
         android:paddingTop="48dp"
-        android:paddingBottom="28dp">
+        android:paddingBottom="24dp">
 
+        <!-- Greeting row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:layout_marginBottom="16dp">
+            android:layout_marginBottom="20dp">
 
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:orientation="vertical">
+
                 <TextView
                     android:id="@+id/tvGreeting"
                     android:layout_width="wrap_content"
@@ -34,11 +36,12 @@
                     android:text="Good Morning,"
                     android:textColor="#C7D2FE"
                     android:textSize="13sp" />
+
                 <TextView
                     android:id="@+id/tvUserName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Ahmed 👋"
+                    android:text="User 👋"
                     android:textColor="#FFFFFF"
                     android:textSize="22sp"
                     android:textStyle="bold" />
@@ -54,27 +57,47 @@
                 android:contentDescription="Menu" />
         </LinearLayout>
 
+        <!-- Stats row — 2 cards -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:weightSum="3">
+            android:weightSum="2">
 
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:background="@drawable/bg_stat_card"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:padding="10dp"
-                android:layout_marginEnd="6dp">
-                <TextView android:id="@+id/tvMedCount"
-                    android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="0" android:textColor="#FFFFFF"
-                    android:textSize="22sp" android:textStyle="bold" />
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="Medicines" android:textColor="#C7D2FE" android:textSize="10sp" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="12dp"
+                android:layout_marginEnd="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="💊"
+                    android:textSize="20sp"
+                    android:layout_marginEnd="8dp" />
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <TextView
+                        android:id="@+id/tvMedCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="#FFFFFF"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="My Medicines"
+                        android:textColor="#C7D2FE"
+                        android:textSize="10sp" />
+                </LinearLayout>
             </LinearLayout>
 
             <LinearLayout
@@ -82,99 +105,128 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:background="@drawable/bg_stat_card"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:padding="10dp"
-                android:layout_marginEnd="6dp">
-                <TextView android:id="@+id/tvWarnCount"
-                    android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="0" android:textColor="#FFFFFF"
-                    android:textSize="22sp" android:textStyle="bold" />
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="Warnings" android:textColor="#C7D2FE" android:textSize="10sp" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="12dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⚠️"
+                    android:textSize="20sp"
+                    android:layout_marginEnd="8dp" />
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <TextView
+                        android:id="@+id/tvWarnCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="#FFFFFF"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Interactions"
+                        android:textColor="#C7D2FE"
+                        android:textSize="10sp" />
+                </LinearLayout>
             </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:background="@drawable/bg_stat_card"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:padding="10dp">
-                <TextView android:id="@+id/tvTodayCount"
-                    android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="0" android:textColor="#FFFFFF"
-                    android:textSize="22sp" android:textStyle="bold" />
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="Today" android:textColor="#C7D2FE" android:textSize="10sp" />
-            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 
+    <!-- ═══ BODY ═══ -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="16dp">
 
+            <!-- ── Quick Actions ── -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Quick Actions"
+                android:textColor="#1E1B4B"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="10dp"
+                android:layout_marginTop="4dp" />
+
             <LinearLayout
-                android:id="@+id/scanBanner"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_scan_banner"
                 android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:padding="14dp"
+                android:weightSum="2"
                 android:layout_marginBottom="20dp">
 
-                <FrameLayout
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
-                    android:background="@drawable/bg_btn_primary"
-                    android:layout_marginEnd="12dp">
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_gravity="center"
-                        android:src="@drawable/ic_scan"
-                        android:tint="#FFFFFF"
-                        android:contentDescription="Scan" />
-                </FrameLayout>
-
+                <!-- Scan Medicine -->
                 <LinearLayout
+                    android:id="@+id/cardScan"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="100dp"
                     android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:background="@drawable/bg_btn_primary"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:layout_marginEnd="8dp"
+                    android:elevation="4dp"
+                    android:clickable="true"
+                    android:focusable="true">
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Scan Medicine Barcode"
-                        android:textColor="#1E1B4B"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
+                        android:text="📷"
+                        android:textSize="30sp"
+                        android:layout_marginBottom="6dp" />
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Get instant medicine information"
-                        android:textColor="#8B5CF6"
-                        android:textSize="12sp"
-                        android:layout_marginTop="2dp" />
+                        android:text="Scan Medicine"
+                        android:textColor="#FFFFFF"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:gravity="center" />
                 </LinearLayout>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="›"
-                    android:textColor="#8B5CF6"
-                    android:textSize="24sp"
-                    android:textStyle="bold" />
+                <!-- Add Medicine -->
+                <LinearLayout
+                    android:id="@+id/cardAddMed"
+                    android:layout_width="0dp"
+                    android:layout_height="100dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_card_white"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:elevation="4dp"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="➕"
+                        android:textSize="30sp"
+                        android:layout_marginBottom="6dp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Add Medicine"
+                        android:textColor="#1E1B4B"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:gravity="center" />
+                </LinearLayout>
+
             </LinearLayout>
 
+            <!-- ── Today's Medicines ── -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -187,13 +239,13 @@
                     android:layout_weight="1"
                     android:text="My Medicines"
                     android:textColor="#1E1B4B"
-                    android:textSize="17sp"
+                    android:textSize="16sp"
                     android:textStyle="bold" />
                 <TextView
                     android:id="@+id/tvSeeAll"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="See all"
+                    android:text="See all →"
                     android:textColor="#6366F1"
                     android:textSize="13sp"
                     android:textStyle="bold"
@@ -206,8 +258,10 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:indeterminateTint="#8B5CF6"
-                android:visibility="gone" />
+                android:visibility="gone"
+                android:layout_marginBottom="8dp" />
 
+            <!-- Empty state -->
             <LinearLayout
                 android:id="@+id/layoutEmpty"
                 android:layout_width="match_parent"
@@ -215,6 +269,7 @@
                 android:orientation="vertical"
                 android:gravity="center"
                 android:padding="32dp"
+                android:background="@drawable/bg_card_white"
                 android:visibility="gone">
                 <TextView
                     android:layout_width="wrap_content"
@@ -233,7 +288,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Go to Medicines tab to add your first medicine"
+                    android:text="Tap ➕ Add Medicine above to get started"
                     android:textColor="#9CA3AF"
                     android:textSize="13sp"
                     android:gravity="center" />
@@ -245,6 +300,10 @@
                 android:layout_height="wrap_content"
                 android:nestedScrollingEnabled="false" />
 
+            <!-- Bottom spacing for FAB -->
+            <View android:layout_width="match_parent" android:layout_height="80dp" />
+
         </LinearLayout>
     </ScrollView>
+
 </LinearLayout>
