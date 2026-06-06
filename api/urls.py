@@ -15,6 +15,7 @@ urlpatterns = [
 
     # ── Interactions ──────────────────────
     path('interactions/check/', views.check_interaction, name='check_interaction'),
+    path('interactions/count/', views.interaction_count, name='interaction_count'),
 
     # ── Schedules ─────────────────────────
     path('schedules/', views.get_schedules, name='get_schedules'),

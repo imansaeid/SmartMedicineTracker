@@ -143,7 +143,12 @@ def add_medicine(request):
     highest_severity = None
     conflict_description = ''
 
+    print(f"\n=== INTERACTION CHECK ===")
+    print(f"New medicine: {new_medicine.name} | active: {new_medicine.active_ingredient} | conflicts_with: {new_medicine.conflicts_with}")
+
     for um in user_medicines:
+        print(f"Checking against: {um.catalog.name} | active: {um.catalog.active_ingredient} | conflicts_with: {um.catalog.conflicts_with}")
+
         # Get all conflict entries for existing medicine
         existing_conflicts = Medicine.objects.filter(
             name__icontains=um.catalog.name
@@ -151,9 +156,15 @@ def add_medicine(request):
 
         conflict = None
         for ec in existing_conflicts:
-            if ec.conflicts_with and ec.conflicts_with.lower() in new_medicine.active_ingredient.lower():
-                conflict = ec
-                break
+            if ec.conflicts_with:
+                cw = ec.conflicts_with.lower()
+                new_active = new_medicine.active_ingredient.lower()
+                new_name   = new_medicine.name.lower()
+                print(f"  [DIR1] conflicts_with={cw!r} | new_active={new_active!r} | new_name={new_name!r}")
+                if cw in new_active or cw in new_name:
+                    conflict = ec
+                    print(f"  [DIR1] MATCH!")
+                    break
 
         # Check reverse direction
         if not conflict:
@@ -161,22 +172,31 @@ def add_medicine(request):
                 name__icontains=new_medicine.name
             )
             for nc in new_conflicts:
-                if nc.conflicts_with and nc.conflicts_with.lower() in um.catalog.active_ingredient.lower():
-                    conflict = nc
-                    break
+                if nc.conflicts_with:
+                    cw = nc.conflicts_with.lower()
+                    ex_active = um.catalog.active_ingredient.lower()
+                    ex_name   = um.catalog.name.lower()
+                    print(f"  [DIR2] conflicts_with={cw!r} | ex_active={ex_active!r} | ex_name={ex_name!r}")
+                    if cw in ex_active or cw in ex_name:
+                        conflict = nc
+                        print(f"  [DIR2] MATCH!")
+                        break
 
         if conflict:
-            if conflict.interaction_severity == 'High':
+            sev = (conflict.interaction_severity or '').strip().capitalize()
+            print(f"  CONFLICT FOUND! severity raw={conflict.interaction_severity!r} -> normalized={sev}")
+            if sev == 'High':
                 highest_severity = 'High'
                 conflict_description = conflict.interaction_description
                 break
-            elif conflict.interaction_severity == 'Medium':
+            elif sev == 'Medium':
                 highest_severity = 'Medium'
                 conflict_description = conflict.interaction_description
-            elif conflict.interaction_severity == 'Low' and highest_severity is None:
+            elif sev == 'Low' and highest_severity is None:
                 highest_severity = 'Low'
                 conflict_description = conflict.interaction_description
 
+    print(f"=== RESULT: highest_severity={highest_severity!r} ===\n")
     # إذا التضارب عالي — ارفض الإضافة
     if highest_severity == 'High':
         return Response({
@@ -203,6 +223,50 @@ def add_medicine(request):
             response_data['description'] = conflict_description
         return Response(response_data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ─── 5b. عدد التعارضات لأدوية المستخدم ─────────────
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def interaction_count(request):
+    custom_user_id = int(request.user.username.split('_')[1])
+    user_medicines = list(UserMedicine.objects.filter(
+        user_id=custom_user_id
+    ).select_related('catalog'))
+
+    count = 0
+    checked_pairs = set()
+
+    for i, um1 in enumerate(user_medicines):
+        for j, um2 in enumerate(user_medicines):
+            if i >= j:
+                continue
+            pair_key = tuple(sorted([um1.catalog.catalog_id, um2.catalog.catalog_id]))
+            if pair_key in checked_pairs:
+                continue
+            checked_pairs.add(pair_key)
+
+            # فحص الاتجاه الأول
+            found = False
+            for ec in Medicine.objects.filter(name__icontains=um1.catalog.name):
+                if ec.conflicts_with:
+                    cw = ec.conflicts_with.lower()
+                    if cw in um2.catalog.active_ingredient.lower() or cw in um2.catalog.name.lower():
+                        count += 1
+                        found = True
+                        break
+            if found:
+                continue
+
+            # فحص الاتجاه العكسي
+            for ec in Medicine.objects.filter(name__icontains=um2.catalog.name):
+                if ec.conflicts_with:
+                    cw = ec.conflicts_with.lower()
+                    if cw in um1.catalog.active_ingredient.lower() or cw in um1.catalog.name.lower():
+                        count += 1
+                        break
+
+    return Response({'interaction_count': count})
 
 
 # ─── 6. قائمة أدوية المستخدم ────────────────────────
